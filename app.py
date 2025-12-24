@@ -35,31 +35,54 @@ if uploaded_files:
             df["source_file"] = file.name
             combined_list.append(df)
         else:
-            st.warning(f"❌ Could not read file: {file.name}")
+            st.warning(f"❌ Could not read: {file.name}")
 
     combined_df = pd.concat(combined_list, ignore_index=True)
 
     st.success("🎉 Files combined successfully!")
 
-    st.subheader("🔽 Select columns you want in the final output")
+    st.subheader("🔎 Column Selection")
 
-    all_columns = list(combined_df.columns)
+    all_columns = combined_df.columns.tolist()
 
+    # --- SEARCH BOX ---
+    search_text = st.text_input("Search columns:")
+
+    if search_text:
+        filtered_columns = [c for c in all_columns if search_text.lower() in c.lower()]
+    else:
+        filtered_columns = all_columns
+
+    # --- SELECT ALL | CLEAR ALL BUTTONS ---
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("Select All"):
+            selected_columns = filtered_columns.copy()
+        else:
+            selected_columns = st.session_state.get("selected_columns", filtered_columns)
+
+    with col2:
+        if st.button("Clear All"):
+            selected_columns = []
+
+    # --- MULTISELECT ---
     selected_columns = st.multiselect(
-        "Choose columns to include:",
-        options=all_columns,
-        default=all_columns  # by default export all
+        "Choose columns to include in output:",
+        filtered_columns,
+        default=selected_columns,
+        key="selected_columns"
     )
 
+    # FINAL DF BASED ON SELECTION
     final_df = combined_df[selected_columns]
 
-    # Convert result to Excel in memory
+    # Convert result to Excel in-memory
     output = io.BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         final_df.to_excel(writer, index=False, sheet_name="Combined")
 
     st.download_button(
-        label="⬇️ Download Excel with Selected Columns",
+        label="⬇️ Download Excel (Selected Columns)",
         data=output.getvalue(),
         file_name="Combined_Selected_Columns.xlsx",
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
