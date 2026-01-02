@@ -106,19 +106,27 @@ if uploaded_files:
     # File Name Logic
     # ------------------------------
     st.subheader("📄 Output File Name")
-
+    
+    # Initialize in session state if not present
+    if "user_filename" not in st.session_state:
+        st.session_state.user_filename = ""
+    
+    # Input box for filename
     user_filename = st.text_input(
         "Enter output file name (without .xlsx):",
-        value=""
+        value=st.session_state.user_filename,
+        key="user_filename"
     )
-
-    if user_filename.strip():
-        final_filename = f"{user_filename.strip()}.xlsx"
+    
+    # Final filename logic
+    if st.session_state.user_filename.strip():
+        final_filename = f"{st.session_state.user_filename.strip()}.xlsx"
     else:
         random_name = uuid.uuid4().hex[:8]
         final_filename = f"combined_{random_name}.xlsx"
-
+    
     st.caption(f"📎 File will be downloaded as: **{final_filename}**")
+
 
     # ------------------------------
     # Download Button
