@@ -22,17 +22,16 @@ uploaded_files = st.file_uploader(
 # File Reader
 # ------------------------------
 def read_file(file):
-    name = file.name.lower()
-
-    if name.endswith(".csv"):
-        return pd.read_csv(file, dtype=str)
-
-    if name.endswith(".txt") or name.endswith(".tsv"):
-        return pd.read_csv(file, dtype=str, sep=None, engine="python")
-
-    if name.endswith(".xlsx") or name.endswith(".xls"):
-        return pd.read_excel(file, dtype=str)
-
+    try:
+        name = file.name.lower()
+        if name.endswith(".csv"):
+            return pd.read_csv(file, dtype=str)
+        elif name.endswith(".txt") or name.endswith(".tsv"):
+            return pd.read_csv(file, dtype=str, sep=None, engine="python")
+        elif name.endswith(".xlsx") or name.endswith(".xls"):
+            return pd.read_excel(file, dtype=str)
+    except Exception as e:
+        st.warning(f"⚠️ Failed to read {file.name}: {e}")
     return None
 
 # ------------------------------
@@ -69,8 +68,11 @@ if uploaded_files:
     else:
         filtered_columns = all_columns
 
-    col1, col2 = st.columns(2)
+    # Initialize session state
+    if "selected_columns" not in st.session_state:
+        st.session_state.selected_columns = filtered_columns
 
+    col1, col2 = st.columns(2)
     with col1:
         if st.button("Select All"):
             st.session_state.selected_columns = filtered_columns
@@ -82,7 +84,7 @@ if uploaded_files:
     selected_columns = st.multiselect(
         "Choose columns to include in output:",
         filtered_columns,
-        default=st.session_state.get("selected_columns", filtered_columns),
+        default=st.session_state.selected_columns,
         key="selected_columns"
     )
 
@@ -98,6 +100,7 @@ if uploaded_files:
     output = io.BytesIO()
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         final_df.to_excel(writer, index=False, sheet_name="Combined")
+    output.seek(0)
 
     # ------------------------------
     # File Name Logic
@@ -105,8 +108,8 @@ if uploaded_files:
     st.subheader("📄 Output File Name")
 
     user_filename = st.text_input(
-        "Enter output file name (optional, without .xlsx):",
-        placeholder="e.g. merged_data"
+        "Enter output file name (without .xlsx):",
+        value=""
     )
 
     if user_filename.strip():
