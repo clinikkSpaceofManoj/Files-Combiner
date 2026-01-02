@@ -68,7 +68,7 @@ if uploaded_files:
     else:
         filtered_columns = all_columns
 
-    # Initialize session state
+    # Initialize session state for selected columns
     if "selected_columns" not in st.session_state:
         st.session_state.selected_columns = filtered_columns
 
@@ -88,6 +88,31 @@ if uploaded_files:
         key="selected_columns"
     )
 
+    # ------------------------------
+    # File Name Input (Always Shown)
+    # ------------------------------
+    st.subheader("📄 Output File Name")
+
+    if "user_filename" not in st.session_state:
+        st.session_state.user_filename = ""
+
+    user_filename = st.text_input(
+        "Enter output file name (without .xlsx):",
+        value=st.session_state.user_filename,
+        key="user_filename"
+    )
+
+    if st.session_state.user_filename.strip():
+        final_filename = f"{st.session_state.user_filename.strip()}.xlsx"
+    else:
+        random_name = uuid.uuid4().hex[:8]
+        final_filename = f"combined_{random_name}.xlsx"
+
+    st.caption(f"📎 File will be downloaded as: **{final_filename}**")
+
+    # ------------------------------
+    # Validate column selection
+    # ------------------------------
     if not selected_columns:
         st.warning("⚠️ Please select at least one column to download.")
         st.stop()
@@ -101,32 +126,6 @@ if uploaded_files:
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         final_df.to_excel(writer, index=False, sheet_name="Combined")
     output.seek(0)
-
-    # ------------------------------
-    # File Name Logic
-    # ------------------------------
-    st.subheader("📄 Output File Name")
-    
-    # Initialize in session state if not present
-    if "user_filename" not in st.session_state:
-        st.session_state.user_filename = ""
-    
-    # Input box for filename
-    user_filename = st.text_input(
-        "Enter output file name (without .xlsx):",
-        value=st.session_state.user_filename,
-        key="user_filename"
-    )
-    
-    # Final filename logic
-    if st.session_state.user_filename.strip():
-        final_filename = f"{st.session_state.user_filename.strip()}.xlsx"
-    else:
-        random_name = uuid.uuid4().hex[:8]
-        final_filename = f"combined_{random_name}.xlsx"
-    
-    st.caption(f"📎 File will be downloaded as: **{final_filename}**")
-
 
     # ------------------------------
     # Download Button
