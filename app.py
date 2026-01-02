@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 import io
+import uuid
+
 
 st.title("📂 Universal File Combiner Tool")
 st.write("Upload CSV, Excel, or TXT files → Combine → Select Columns → Download Excel")
@@ -81,9 +83,23 @@ if uploaded_files:
     with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
         final_df.to_excel(writer, index=False, sheet_name="Combined")
 
+    st.subheader("📄 Output File Name")
+
+    user_filename = st.text_input(
+        "Enter output file name (optional, without .xlsx):",
+        placeholder="e.g. merged_data"
+    )
+    
+    # If user does not enter a name → generate random one
+    if user_filename.strip():
+        final_filename = f"{user_filename.strip()}.xlsx"
+    else:
+        random_name = uuid.uuid4().hex[:8]
+        final_filename = f"combined_{random_name}.xlsx"
+
     st.download_button(
         label="⬇️ Download Excel (Selected Columns)",
         data=output.getvalue(),
-        file_name="Combined_Selected_Columns.xlsx",
+        file_name=final_filename,
         mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
